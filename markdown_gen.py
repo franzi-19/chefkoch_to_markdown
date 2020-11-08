@@ -1,8 +1,35 @@
-from scrape import get_recipe_data
+from chefkoch_to_markdown.scrape import get_recipe_data
 from argparse import ArgumentParser, FileType
 import re
 
-def get_markdown(url):
+def get_title(url):
+    return get_recipe_data(url).name
+
+def get_markdown_of_unknown_side(url, id):
+    return f"""
+# Unkown
+### #{id}
+## Informationen
+* Entspricht bei Multiplikator 1: 0 Portionen
+...Metadaten(Zubereitungszeit etc.)...
+
+## Zubereitung
+### Gericht
+...Zutaten...
+
+...Zubereitung...
+
+## Kommentare
+
+## Schlagwörter
+...Tags...
+
+## Quelle
+<{url}>
+    """.strip() + "\n"
+
+
+def get_markdown(url, id): # returns converted recipe in markdown
     data = get_recipe_data(url)
 
     ingredients = "\n".join(f"* {re.sub(r' ', '', amount)} {what}" for amount, what in data.ingredients)
@@ -12,6 +39,7 @@ def get_markdown(url):
 
     return f"""
 # {data.name}
+### #{id}
 ## Informationen
 * Entspricht bei Multiplikator 1: {data.servings} Portionen
 {meta}
@@ -21,6 +49,8 @@ def get_markdown(url):
 {ingredients}
 
 {data.preparation}
+
+## Kommentare
 
 ## Schlagwörter
 {tags}
@@ -35,7 +65,7 @@ def main():
     parser.add_argument("FILE", help="The markdown file", type=FileType(mode="w"))
 
     args = parser.parse_args()
-    markdown = get_markdown(args.URL)
+    markdown, _ = get_markdown(args.URL)
     args.FILE.write(markdown)
 
 if __name__ == '__main__':
